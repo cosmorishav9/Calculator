@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .calculator {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .display {
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            text-align: right;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .expression {
+            font-size: 1.2rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.7);
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .result {
+            font-size: 2.5rem;
+            font-weight: 300;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 500;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn.operator {
+            background: rgba(255, 107, 107, 0.3);
+        }
+
+        .btn.operator:hover {
+            background: rgba(255, 107, 107, 0.5);
+        }
+
+        .btn.equals {
+            background: rgba(72, 187, 120, 0.3);
+            grid-column: span 2;
+        }
+
+        .btn.equals:hover {
+            background: rgba(72, 187, 120, 0.5);
+        }
+
+        .btn.clear {
+            background: rgba(255, 165, 0, 0.3);
+        }
+
+        .btn.clear:hover {
+            background: rgba(255, 165, 0, 0.5);
+        }
+
+        .btn.zero {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 480px) {
+            .calculator {
+                padding: 20px;
+            }
+            
+            .result {
+                font-size: 2rem;
+                padding: 10px;
+            }
+            
+            .expression {
+                font-size: 1rem;
+            }
+            
+            .btn {
+                font-size: 1.2rem;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display">
+            <div class="expression" id="expression"></div>
+            <div class="result" id="result">0</div>
+        </div>
+        <div class="buttons">
+            <button class="btn clear" onclick="clearDisplay()">C</button>
+            <button class="btn clear" onclick="clearEntry()">CE</button>
+            <button class="btn operator" onclick="inputOperator('/')" title="Divide">÷</button>
+            <button class="btn operator" onclick="inputOperator('*')" title="Multiply">×</button>
+            
+            <button class="btn" onclick="inputNumber('7')">7</button>
+            <button class="btn" onclick="inputNumber('8')">8</button>
+            <button class="btn" onclick="inputNumber('9')">9</button>
+            <button class="btn operator" onclick="inputOperator('-')" title="Subtract">-</button>
+            
+            <button class="btn" onclick="inputNumber('4')">4</button>
+            <button class="btn" onclick="inputNumber('5')">5</button>
+            <button class="btn" onclick="inputNumber('6')">6</button>
+            <button class="btn operator" onclick="inputOperator('+')" title="Add">+</button>
+            
+            <button class="btn" onclick="inputNumber('1')">1</button>
+            <button class="btn" onclick="inputNumber('2')">2</button>
+            <button class="btn" onclick="inputNumber('3')">3</button>
+            <button class="btn" onclick="inputDecimal()">.</button>
+            
+            <button class="btn zero" onclick="inputNumber('0')">0</button>
+            <button class="btn equals" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        let resultDisplay = document.getElementById('result');
+        let expressionDisplay = document.getElementById('expression');
+        let currentInput = '0';
+        let operator = null;
+        let waitingForOperand = false;
+        let previousInput = null;
+        let expression = '';
+        let secondOperandStarted = false;
+
+        function updateDisplay() {
+            resultDisplay.textContent = currentInput;
+            expressionDisplay.textContent = expression;
+        }
+
+        function inputNumber(num) {
+            if (waitingForOperand) {
+                currentInput = num;
+                waitingForOperand = false;
+                secondOperandStarted = true;
+                // Add first digit of second operand to expression
+                expression += num;
+            } else {
+                currentInput = currentInput === '0' ? num : currentInput + num;
+                
+                // If we're entering the second operand, update the expression
+                if (secondOperandStarted) {
+                    // Remove the last part after the operator and replace with current input
+                    const operatorIndex = expression.lastIndexOf(' ');
+                    if (operatorIndex !== -1) {
+                        const beforeOperator = expression.substring(0, operatorIndex + 1);
+                        expression = beforeOperator + currentInput;
+                    }
+                }
+            }
+            
+            updateDisplay();
+        }
+
+        function inputDecimal() {
+            if (waitingForOperand) {
+                currentInput = '0.';
+                waitingForOperand = false;
+                secondOperandStarted = true;
+                expression += '0.';
+            } else if (currentInput.indexOf('.') === -1) {
+                currentInput += '.';
+                
+                // If we're entering the second operand, update the expression
+                if (secondOperandStarted) {
+                    const operatorIndex = expression.lastIndexOf(' ');
+                    if (operatorIndex !== -1) {
+                        const beforeOperator = expression.substring(0, operatorIndex + 1);
+                        expression = beforeOperator + currentInput;
+                    }
+                }
+            }
+            
+            updateDisplay();
+        }
+
+        function inputOperator(nextOperator) {
+            const inputValue = parseFloat(currentInput);
+
+            if (previousInput === null) {
+                previousInput = inputValue;
+                expression = currentInput;
+            } else if (operator) {
+                const currentValue = previousInput || 0;
+                const newValue = performCalculation(currentValue, inputValue, operator);
+
+                if (newValue === 'Error') {
+                    currentInput = 'Error';
+                    expression = 'Error';
+                    updateDisplay();
+                    return;
+                }
+
+                currentInput = String(newValue);
+                previousInput = newValue;
+                expression = currentInput;
+            }
+
+            waitingForOperand = true;
+            secondOperandStarted = false;
+            operator = nextOperator;
+            
+            // Update expression display with operator symbol
+            const operatorSymbol = nextOperator === '*' ? '×' : nextOperator === '/' ? '÷' : nextOperator;
+            expression += ' ' + operatorSymbol + ' ';
+            updateDisplay();
+        }
+
+        function performCalculation(firstOperand, secondOperand, operator) {
+            switch (operator) {
+                case '+':
+                    return firstOperand + secondOperand;
+                case '-':
+                    return firstOperand - secondOperand;
+                case '*':
+                    return firstOperand * secondOperand;
+                case '/':
+                    if (secondOperand === 0) {
+                        return 'Error';
+                    }
+                    return firstOperand / secondOperand;
+                default:
+                    return secondOperand;
+            }
+        }
+
+        function calculate() {
+            const inputValue = parseFloat(currentInput);
+
+            if (previousInput !== null && operator) {
+                // Complete the expression
+                expression += ' =';
+                
+                const newValue = performCalculation(previousInput, inputValue, operator);
+                
+                if (newValue === 'Error') {
+                    currentInput = 'Error';
+                    expression = 'Error';
+                } else {
+                    currentInput = String(newValue);
+                    previousInput = null;
+                    operator = null;
+                    waitingForOperand = true;
+                    secondOperandStarted = false;
+                }
+                
+                updateDisplay();
+            }
+        }
+
+        function clearDisplay() {
+            currentInput = '0';
+            operator = null;
+            previousInput = null;
+            waitingForOperand = false;
+            secondOperandStarted = false;
+            expression = '';
+            updateDisplay();
+        }
+
+        function clearEntry() {
+            currentInput = '0';
+            updateDisplay();
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', function(e) {
+            const key = e.key;
+            
+            if (key >= '0' && key <= '9') {
+                inputNumber(key);
+            } else if (key === '.') {
+                inputDecimal();
+            } else if (key === '+' || key === '-' || key === '*' || key === '/') {
+                inputOperator(key);
+            } else if (key === 'Enter' || key === '=') {
+                e.preventDefault();
+                calculate();
+            } else if (key === 'Escape') {
+                clearDisplay();
+            } else if (key === 'Backspace') {
+                clearEntry();
+            }
+        });
+    </script>
+</body>
+</html>
